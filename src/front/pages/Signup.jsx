@@ -1,9 +1,12 @@
 import React, {useState} from 'react'
+import { useNavigate } from "react-router-dom";
+import './Css/login.scss'
 
 export const Signup = () => {
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+	const [reEnteredpassword, setReEnteredPassword] = useState("")
 
     const handleSignup = async()=>{
 		const data = {
@@ -23,7 +26,7 @@ export const Signup = () => {
 				throw new Error("Error login endpoint");
 				
 			}
-            window.location.href="/"
+            navigate("/")
 
 		} catch (error) {
 			console.error(error)
@@ -34,24 +37,30 @@ export const Signup = () => {
 
     
     return (
-        <div>
+		<body>
+        <div className='wrapper'>
             <h1>Signup</h1>
             <form>
-                <div className="mb-3">
-                    <label for="exampleInputEmail1" className="form-label">Email address</label>
+                <div className="input-box">
                     <input type="email" onChange={(e)=>{
 						setEmail(e.target.value)
-					}} className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
-                    <div id="emailHelp" className="form-text">We'll never share your email with anyone else.</div>
+					}} className="form-control"  id="InputEmail" placeholder="Email"/>
                 </div>
-                <div className="mb-3">
-                    <label for="exampleInputPassword1" className="form-label">Password</label>
+                <div className="input-box">
                     <input type="password" onChange={(e)=>{
 						setPassword(e.target.value)
-					}} className="form-control" id="exampleInputPassword1" />
+					}} className="form-control" id="InputPassword" placeholder="Password"/>
                 </div>
-                <button type="button" onClick={handleSignup} className="btn btn-primary">Submit</button>
+				<div className="input-box">
+                    <input type="password" onChange={(e)=>{
+						setReEnteredPassword(e.target.value)
+					}} className="form-control" id="InputReEnteredPassword1" placeholder="Re-enter password"/>
+                </div>
+				<div className='buttons'>
+                <button type="button" onClick={handleSignup} className="signup">Submit</button>
+				</div>
             </form>
         </div>
+		</body>
     )
 }

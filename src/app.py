@@ -6,13 +6,14 @@ from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from api.utils import APIException, generate_sitemap
-from api.models import db, User
+from api.models import db, User, BlackListToken
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt, get_jti, verify_jwt_in_request
 from flask_cors import CORS
 import random
+from datetime import datetime, timezone
 
 # from models import Person
 
@@ -51,6 +52,15 @@ app.register_blueprint(api, url_prefix='/api')
 
 # Handle/serialize errors like a JSON object
 
+# Funcion para verificar si un jwt esta en la lista negra
+
+@jwt.token_in_blocklist_loader
+def handle_revoked_token(jwt_header,jwt_payload):
+    jti = jwt_payload['jti']
+
+    token = db.session.execute(db.select(BlackListToken).filter_by(jti=jti)).scalar()
+    return token is not None
+
 
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
@@ -77,43 +87,51 @@ def serve_any_other_file(path):
 
 @app.route("/users", methods=["POST"])
 def create_user():
+
     data = request.get_json(silent=True)
+    if not data or not data.get("email") or not data.get("password"):
+        return jsonify({"error": "Datos inválidos"}), 400
 
-    if not data or "email" not in data:
-        return jsonify({"error": "Datos incompletos"}), 400
+    if db.session.execute(db.select(User).filter_by(email=data["email"])).scalar_one_or_none():
+        return jsonify({"error": "Usuario ya existe"}), 409
 
-    try:
-        user = User(id=random.randint(100, 999999),
-                    email=data["email"],
-                    password=data["password"],
-                    is_active=True
-                    )
-        db.session.add(user)
-        db.session.commit()
-        return jsonify(user.serialize()), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+    user = User(email=data["email"], password=data["password"])
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({"message": "Usuario registrado"}), 201
+
 
 
 @app.route('/login', methods=['POST'])
 def handle_login():
     try:
-        
+
         data = request.get_json(silent=True)
-        email = data.get("email")
+        user = db.session.execute(db.select(User).filter_by(email=data["email"])).scalar_one_or_none()
 
-        created = User.query.get(email)
-        if created is None:
-            return jsonify({"error": "Planeta no encontrado"}), 404
+        if not user or user.password != data["password"]:
+            return jsonify({"msg": "Credenciales incorrectas"}), 401
 
-        access_token = create_access_token(identity=str(data))
-
+        access_token = create_access_token(identity=str(user.id))
+        
         return jsonify({"ok":True, "msg": "Login exitoso", "access_token":access_token}),200
+    
     except Exception as e:
         print("Error: ", str(e))
         db.session.rollback()
         return jsonify({"ok": False, "msg":str(e)}),500
+    
+
+
+@app.route('/logout', methods= ['POST'])
+@jwt_required()
+def handle_logout():
+    jti = get_jwt()['jti']
+    date = datetime.now(timezone.utc)
+    db.session.add(BlackListToken(jti=jti,created_at=date))
+    db.session.commit()
+    return jsonify(msg='JWT revoked'), 200
+
 
 
 # this only runs if `$ python src/main.py` is executed

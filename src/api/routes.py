@@ -26,6 +26,7 @@ def handle_hello():
 @api.route('/me', methods=['GET'])
 @jwt_required()
 def handle_me():
-    identity = get_jwt_identity()
-    return jsonify({"ok":True})
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+    return jsonify(user.serialize()), 200
 
