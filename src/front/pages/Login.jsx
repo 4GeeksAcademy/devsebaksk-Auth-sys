@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react"
 import rigoImageUrl from "../assets/img/rigo-baby.jpg";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 import { Link, useNavigate } from "react-router-dom";
-import './Css/login.scss'
+import {motion} from "framer-motion";
+import md5 from "md5";
 
+
+import './Css/login.scss'
 export const Login = () => {
 
 
@@ -73,7 +76,11 @@ export const Login = () => {
 	}, [])
 
 	return (
-		<div className="wrapper">
+		<motion.div
+		initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+		 className="wrapper">
 			
 			<form>
 				<h1>Login</h1>
@@ -90,7 +97,7 @@ export const Login = () => {
 				<div className="input-box">
 					<input type="password" placeholder="Password" required 
 					onChange={(e) => {
-						setPassword(e.target.value)
+						setPassword(md5(e.target.value))
 					}}
 					className="form-control" id="exampleInputPassword1" />
 					<i className="fa-solid fa-lock icon"/>
@@ -109,6 +116,6 @@ export const Login = () => {
 			</Link>
 			</div>
 			</form>
-		</div>
+		</motion.div>
 	);
 }; 

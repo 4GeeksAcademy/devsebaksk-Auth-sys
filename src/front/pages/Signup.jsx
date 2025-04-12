@@ -1,9 +1,11 @@
 import React, {useState} from 'react'
 import { useNavigate } from "react-router-dom";
+import md5 from 'md5';
 import './Css/login.scss'
 
 export const Signup = () => {
 
+	const navigate = useNavigate()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
 	const [reEnteredpassword, setReEnteredPassword] = useState("")
@@ -48,7 +50,7 @@ export const Signup = () => {
                 </div>
                 <div className="input-box">
                     <input type="password" onChange={(e)=>{
-						setPassword(e.target.value)
+						setPassword(md5(e.target.value))
 					}} className="form-control" id="InputPassword" placeholder="Password"/>
                 </div>
 				<div className="input-box">

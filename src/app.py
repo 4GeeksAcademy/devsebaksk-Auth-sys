@@ -14,6 +14,11 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_cors import CORS
 import random
 from datetime import datetime, timezone
+from flask import Flask
+from flask_bcrypt import Bcrypt
+
+
+
 
 # from models import Person
 
@@ -22,6 +27,7 @@ static_file_dir = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), '../public/')
 app = Flask(__name__)
 
+bcrypt = Bcrypt(app)
 CORS(app)
 
 app.url_map.strict_slashes = False
@@ -94,8 +100,8 @@ def create_user():
 
     if db.session.execute(db.select(User).filter_by(email=data["email"])).scalar_one_or_none():
         return jsonify({"error": "Usuario ya existe"}), 409
-
-    user = User(email=data["email"], password=data["password"])
+    pw_hash = bcrypt.generate_password_hash(data["password"]).decode('utf8')
+    user = User(email=data["email"], password=pw_hash)
     db.session.add(user)
     db.session.commit()
     return jsonify({"message": "Usuario registrado"}), 201
@@ -108,8 +114,9 @@ def handle_login():
 
         data = request.get_json(silent=True)
         user = db.session.execute(db.select(User).filter_by(email=data["email"])).scalar_one_or_none()
-
-        if not user or user.password != data["password"]:
+        check = bcrypt.check_password_hash(user.password, data["password"])
+        print (check)
+        if not user or check != True:
             return jsonify({"msg": "Credenciales incorrectas"}), 401
 
         access_token = create_access_token(identity=str(user.id))
