@@ -55,7 +55,14 @@ export const Priv = () => {
             }
         }
 
+    const validationToken = ()=>{
+        if(sessionStorage.getItem('access_token')===null){
+            return navigate("/")
+        }
+    }
+
         useEffect(() => {
+            validationToken()
             handleMe()
             }, [])
 
